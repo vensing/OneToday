@@ -1,6 +1,6 @@
+
 addEventListener('fetch', event => {
-  var promise = proxy(event);
-  var oneHtml = event.respondWith(promise);
+  event.respondWith(proxy(event));
 });
 
 async function proxy(event) {
@@ -24,56 +24,37 @@ async function proxy(event) {
     }
   };
 
-  if (event.request.headers.has("Referer")) {
-    parameter.headers.Referer = getReqHeader("Referer");
-  }
-
-  if (event.request.headers.has("Origin")) {
-    parameter.headers.Origin = getReqHeader("Origin");
-  }
-
+  const response = await fetch(new Request(url), parameter);
+  const COOKIE = response.headers.get('Set-Cookie');
   
-  var promise = fetch(new Request(url, event.request), parameter);
-  return getOneToday(event, promise);
-  
-}
-
-async function getOneToday(event, promise){
-
-  let COOKIE = '';
-  let TOKEN = '';
+  const htmlStr = await response.text();
+  const TOKEN = htmlStr.split("One.token = '")[1].split("'")[0];
   let apiUrl = new URL(event.request.url);
   apiUrl.protocol = "http:";
   apiUrl.hostname = "m.wufazhuce.com";
-
+  apiUrl.href += "one/ajaxlist/0?_token="+TOKEN;
   let apiParameter = {
     headers: {
       'Host': 'm.wufazhuce.com',
+      'User-Agent': getReqHeader("User-Agent"),
+      'Accept': getReqHeader("Accept"),
+      'Accept-Language': getReqHeader("Accept-Language"),
+      'Accept-Encoding': getReqHeader("Accept-Encoding"),
       'Connection': 'keep-alive',
       'Cache-Control': 'max-age=0',
       'Cookie': COOKIE
     }
   };
 
-  return promise.then( res => {
-        COOKIE = res.headers.get('Set-Cookie');
-        apiParameter.headers.Cookie = COOKIE;
-        return res.text();
-  }).then( htmlStr => {
-      TOKEN = htmlStr.split("One.token = '")[1].split("'")[0];
-      apiUrl.href += "one/ajaxlist/0?_token="+TOKEN;
-  }).then( () => {
-    let promise = fetch(new Request(apiUrl, event.request), apiParameter);
-    return promise;
-  }).then( res => {
-    let h = new Headers(res.headers);
-      h.set('set-cookie', '');
-      h.set('access-control-allow-origin', '*');
-      h.set('access-control-expose-headers', '*');
-      return new Response(res.body, {
-          status: res.status,
-          headers: h,
-      });
-  });
+  const resultResponse = await fetch(new Request(apiUrl), apiParameter);
+  let resultHeader = new Headers(resultResponse.headers);
+  resultHeader.set('set-cookie', '');
+  resultHeader.set('access-control-allow-origin', '*');
+  resultHeader.set('access-control-expose-headers', '*');
 
+  return new Response(resultResponse.body, {
+      status: resultResponse.status,
+      headers: resultHeader
+  });
+  
 }
