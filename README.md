@@ -1,6 +1,7 @@
 # OneToday
 
-CloudFlare Workder 反向代理 ONE一个官网(移动端)接口，获取每日图文 🏖。
+CloudFlare Workder 代理 ONE 一个官网(移动端)接口，获取每日图文 🏖。
+演示地址：https://vensing.com/one/
 
 ## 使用方法
 
